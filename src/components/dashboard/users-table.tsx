@@ -16,7 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -29,6 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { MoreHorizontal, Plus } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 const fetchUsers = async (searchTerm: string) => {
   const url = new URL("http://localhost:3000/api/v1/user");
@@ -53,6 +53,7 @@ interface UsersTableProps {
 export function UsersTable({ limit }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   // Debounce logic
   useEffect(() => {
@@ -76,6 +77,7 @@ export function UsersTable({ limit }: UsersTableProps) {
     password: "",
     role: "",
   });
+  const [newPassword, setNewPassword] = useState("");
 
   const { data: users = [] } = useQuery({
     queryKey: ["users", debouncedSearch],
@@ -207,13 +209,15 @@ export function UsersTable({ limit }: UsersTableProps) {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0 cursor-pointer"
+                        >
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
                           className="cursor-pointer"
                           onClick={() => {
@@ -235,7 +239,7 @@ export function UsersTable({ limit }: UsersTableProps) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => deleteMutation.mutate(user.id)}
-                          className="text-red-600"
+                          className="text-red-600 cursor-pointer"
                         >
                           Delete User
                         </DropdownMenuItem>
@@ -268,16 +272,31 @@ export function UsersTable({ limit }: UsersTableProps) {
                 setNewUser({ ...newUser, username: e.target.value })
               }
             />
-            <Input
-              placeholder="Password"
-              type="password"
-              value={newUser.password}
-              onChange={(e) =>
-                setNewUser({ ...newUser, password: e.target.value })
-              }
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={newUser.password}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, password: e.target.value })
+                }
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
             <select
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 cursor-pointer"
               value={newUser.role}
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
             >
@@ -287,10 +306,19 @@ export function UsersTable({ limit }: UsersTableProps) {
             </select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button
+              className="cursor-pointer"
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={() => addMutation.mutate(newUser)}>Add</Button>
+            <Button
+              className="cursor-pointer"
+              onClick={() => addMutation.mutate(newUser)}
+            >
+              Add
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -347,22 +375,47 @@ export function UsersTable({ limit }: UsersTableProps) {
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="relative">
             <Input
-              placeholder="Password"
-              type="password"
-              value={currentUser.password}
+              placeholder="Enter new password"
+              type={showPassword ? "text" : "password"}
+              value={newPassword}
               onChange={(e) => {
+                setNewPassword(e.target.value);
                 setCurrentUser({ ...currentUser, password: e.target.value });
               }}
             />
+            <Button
+              type="button"
+              variant="ghost"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </Button>
           </div>
+          {/* <div className="space-y-4">
+            <Input
+              placeholder="Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setCurrentUser({ ...currentUser, password: e.target.value });
+              }}
+            />
+          </div> */}
           <DialogFooter>
             <Button
               variant="outline"
               className="cursor-pointer"
               onClick={() => {
                 setIsEditPassword(false);
+                setNewPassword("");
                 setCurrentUser({ username: "", password: "", role: "" });
               }}
             >

@@ -41,7 +41,6 @@ export function RegisterForm() {
   const mutation = useMutation({
     mutationFn: registerUser,
     onSuccess: () => {
-      alert("Account created successfully! Redirecting to login...");
       router.push("/login");
     },
     onError: (error) => {

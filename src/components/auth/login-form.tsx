@@ -39,7 +39,6 @@ export function LoginForm() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: () => {
-      alert("Login successful! Redirecting to dashboard...");
       router.push("/dashboard");
     },
     onError: (error) => {

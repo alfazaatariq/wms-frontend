@@ -181,71 +181,79 @@ export function ProductsTable({ limit }: ProductsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product: any) => (
-              <TableRow key={product.id}>
-                <TableCell>{product.id}</TableCell>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell>${product.price}</TableCell>
-                <TableCell>
-                  {product.stock > 10 ? (
-                    <Badge className="bg-green-50 text-green-700">
-                      In Stock
-                    </Badge>
-                  ) : product.stock > 0 ? (
-                    <Badge className="bg-yellow-50 text-yellow-700">
-                      Low Stock
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-red-50 text-red-700">
-                      Out of Stock
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {new Date(product.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 p-0 cursor-pointer"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setIsEditMode(true);
-                          setCurrentProduct(product);
-                        }}
-                      >
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setIsUpdateStock(true);
-                          setCurrentProduct(product);
-                        }}
-                      >
-                        Update Stock
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => deleteMutation.mutate(product.id)}
-                        className="text-red-600 cursor-pointer"
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {products.length > 0 ? (
+              products.map((product: any) => (
+                <TableRow key={product.id}>
+                  <TableCell>{product.id}</TableCell>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
+                  <TableCell>${product.price}</TableCell>
+                  <TableCell>
+                    {product.stock > 10 ? (
+                      <Badge className="bg-green-50 text-green-700">
+                        In Stock
+                      </Badge>
+                    ) : product.stock > 0 ? (
+                      <Badge className="bg-yellow-50 text-yellow-700">
+                        Low Stock
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-red-50 text-red-700">
+                        Out of Stock
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(product.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="h-8 w-8 p-0 cursor-pointer"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setIsEditMode(true);
+                            setCurrentProduct(product);
+                          }}
+                        >
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setIsUpdateStock(true);
+                            setCurrentProduct(product);
+                          }}
+                        >
+                          Update Stock
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => deleteMutation.mutate(product.id)}
+                          className="text-red-600 cursor-pointer"
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="h-24 text-center">
+                  No products found.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
@@ -267,21 +275,29 @@ export function ProductsTable({ limit }: ProductsTableProps) {
               placeholder="Stock"
               type="number"
               value={newProduct.stock}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, stock: e.target.value })
-              }
+              onChange={(e) => {
+                const value = Math.max(0, Number(e.target.value)); // Ensure non-negative
+                setNewProduct({ ...newProduct, stock: value.toString() });
+              }}
             />
             <Input
               placeholder="Price"
               type="number"
               value={newProduct.price}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, price: e.target.value })
-              }
+              onChange={(e) => {
+                const value = Math.max(0, Number(e.target.value)); // Ensure non-negative
+                setNewProduct({ ...newProduct, price: value.toString() });
+              }}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDialogOpen(false);
+                setNewProduct({ name: "", price: "", stock: "" });
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={() => addMutation.mutate(newProduct)}>Add</Button>
@@ -307,7 +323,11 @@ export function ProductsTable({ limit }: ProductsTableProps) {
               type="number"
               value={currentProduct.price}
               onChange={(e) => {
-                setCurrentProduct({ ...currentProduct, price: e.target.value });
+                const value = Math.max(0, Number(e.target.value));
+                setCurrentProduct({
+                  ...currentProduct,
+                  price: value.toString(),
+                });
               }}
             />
           </div>
@@ -343,7 +363,11 @@ export function ProductsTable({ limit }: ProductsTableProps) {
               type="number"
               value={currentProduct.stock}
               onChange={(e) => {
-                setCurrentProduct({ ...currentProduct, stock: e.target.value });
+                const value = Math.max(0, Number(e.target.value)); // Ensure non-negative
+                setCurrentProduct({
+                  ...currentProduct,
+                  stock: value.toString(),
+                });
               }}
             />
           </div>

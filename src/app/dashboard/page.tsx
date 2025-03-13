@@ -8,9 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarDays, Package, ShoppingCart, Users } from "lucide-react";
+import { Package, Users } from "lucide-react";
 import { ProductsTable } from "@/components/dashboard/products-table";
-import { OrdersTable } from "@/components/dashboard/orders-table";
 import { UsersTable } from "@/components/dashboard/users-table";
 import { useQuery } from "@tanstack/react-query";
 
@@ -126,17 +125,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="orders" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Orders</CardTitle>
-              <CardDescription>View and manage customer orders</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <OrdersTable />
-            </CardContent>
-          </Card>
-        </TabsContent>
+
         <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
