@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RegisterForm } from "@/components/auth/register-form";
+import { Package } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Register | WMS",
@@ -9,9 +10,13 @@ export const metadata: Metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="lg:p-8 min-h-screen flex justify-center items-center">
+    <div className="p-8 min-h-screen flex justify-center items-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
+          <div className="flex justify-center items-center flex-col">
+            <Package size={65} />
+            <p className="font-bold">WMS</p>
+          </div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Create an account
           </h1>

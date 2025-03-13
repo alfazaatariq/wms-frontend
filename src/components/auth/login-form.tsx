@@ -7,6 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeOff } from "lucide-react";
 
 async function loginUser({
   username,
@@ -33,6 +34,7 @@ export function LoginForm() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const mutation = useMutation({
     mutationFn: loginUser,
@@ -61,15 +63,29 @@ export function LoginForm() {
           onChange={(e) => setUsername(e.target.value)}
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 relative">
         <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1"
+            onClick={() => setShowPassword((prev) => !prev)}
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={mutation.isPending}>
         {mutation.isPending ? "Logging in..." : "Login"}
@@ -77,64 +93,3 @@ export function LoginForm() {
     </form>
   );
 }
-
-// "use client";
-
-// import type React from "react";
-
-// import { useState } from "react";
-// import { useRouter } from "next/navigation";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { Label } from "@/components/ui/label";
-
-// export function LoginForm() {
-//   const router = useRouter();
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [username, setUsername] = useState("");
-//   const [password, setPassword] = useState("");
-
-//   function handleSubmit(e: React.FormEvent) {
-//     e.preventDefault();
-//     setIsLoading(true);
-
-//     // Simulate API call
-//     setTimeout(() => {
-//       // In a real app, you would validate credentials against your database
-//       console.log({ username, password });
-
-//       // For demo purposes, we'll just redirect to dashboard
-//       alert("Login successful! Redirecting to dashboard...");
-
-//       router.push("/dashboard");
-//       setIsLoading(false);
-//     }, 1000);
-//   }
-
-//   return (
-//     <form onSubmit={handleSubmit} className="space-y-4">
-//       <div className="space-y-2">
-//         <Label htmlFor="username">Username</Label>
-//         <Input
-//           id="username"
-//           placeholder="Enter your username"
-//           value={username}
-//           onChange={(e) => setUsername(e.target.value)}
-//         />
-//       </div>
-//       <div className="space-y-2">
-//         <Label htmlFor="password">Password</Label>
-//         <Input
-//           id="password"
-//           type="password"
-//           placeholder="••••••••"
-//           value={password}
-//           onChange={(e) => setPassword(e.target.value)}
-//         />
-//       </div>
-//       <Button type="submit" className="w-full" disabled={isLoading}>
-//         {isLoading ? "Logging in..." : "Login"}
-//       </Button>
-//     </form>
-//   );
-// }

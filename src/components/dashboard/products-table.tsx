@@ -82,7 +82,10 @@ export function ProductsTable({ limit }: ProductsTableProps) {
 
   const { data: products = [] } = useQuery({
     queryKey: ["products", debouncedSearch],
-    queryFn: () => fetchProducts(debouncedSearch),
+    queryFn: async () => {
+      const fetchedProducts = await fetchProducts(debouncedSearch);
+      return fetchedProducts.sort((a: any, b: any) => a.id - b.id);
+    },
   });
 
   const addMutation = useMutation({

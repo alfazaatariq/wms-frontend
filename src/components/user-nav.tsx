@@ -67,7 +67,6 @@ export function UserNav() {
     },
     onSuccess: async () => {
       await refetch();
-      console.log("REFETCEHD", user);
       setProfileOpen(false);
     },
   });
@@ -151,7 +150,6 @@ export function UserNav() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Profile Overlay (Modal) */}
       <Dialog open={isProfileOpen} onOpenChange={setProfileOpen}>
         <DialogContent>
           <DialogHeader>

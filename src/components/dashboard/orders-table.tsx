@@ -115,9 +115,7 @@ export function OrdersTable({ limit }: OrdersTableProps) {
                   <TableCell>{order.product.name}</TableCell>
                   <TableCell>{order.user.username}</TableCell>
                   <TableCell>{order.quantity}</TableCell>
-                  <TableCell>
-                    {/* {new Date(order.createdAt).toLocaleDateString()} */}
-                  </TableCell>
+                  <TableCell></TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,46 +21,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { MoreHorizontal, Plus } from "lucide-react";
 
-// Mock data based on the user table schema
-const users = [
-  {
-    id: 1,
-    username: "admin",
-    role: "1", // Admin
-    createdAt: "2023-01-10T08:30:00Z",
-    updatedAt: "2023-01-10T08:30:00Z",
-  },
-  {
-    id: 2,
-    username: "user1",
-    role: "2", // Regular user
-    createdAt: "2023-02-15T10:45:00Z",
-    updatedAt: "2023-02-15T10:45:00Z",
-  },
-  {
-    id: 3,
-    username: "user2",
-    role: "2", // Regular user
-    createdAt: "2023-03-20T14:20:00Z",
-    updatedAt: "2023-03-20T14:20:00Z",
-  },
-  {
-    id: 4,
-    username: "manager1",
-    role: "1", // Admin
-    createdAt: "2023-04-05T09:10:00Z",
-    updatedAt: "2023-04-05T09:10:00Z",
-  },
-  {
-    id: 5,
-    username: "user3",
-    role: "2", // Regular user
-    createdAt: "2023-05-12T16:30:00Z",
-    updatedAt: "2023-05-12T16:30:00Z",
-  },
-];
+const fetchUsers = async (searchTerm: string) => {
+  const url = new URL("http://localhost:3000/api/v1/user");
+  if (searchTerm) {
+    url.searchParams.append("search", searchTerm);
+  }
+
+  const response = await fetch(url.toString(), {
+    credentials: "include",
+  });
+
+  if (!response.ok) throw new Error("Failed to fetch users");
+
+  const { data } = await response.json();
+  return data;
+};
 
 interface UsersTableProps {
   limit?: number;
@@ -67,31 +52,115 @@ interface UsersTableProps {
 
 export function UsersTable({ limit }: UsersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  let filteredUsers = users.filter((user) =>
-    user.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Debounce logic
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
 
-  if (limit) {
-    filteredUsers = filteredUsers.slice(0, limit);
-  }
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    username: "",
+    password: "",
+    role: "",
+  });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditPassword, setIsEditPassword] = useState(false);
+  const [currentUser, setCurrentUser] = useState({
+    username: "",
+    password: "",
+    role: "",
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["users", debouncedSearch],
+    queryFn: async () => {
+      const fetchedUsers = await fetchUsers(debouncedSearch);
+      return fetchedUsers.sort((a: any, b: any) => a.id - b.id);
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const addMutation = useMutation({
+    mutationFn: async (user: any) => {
+      const response = await fetch("http://localhost:3000/api/v1/user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to add product");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setIsDialogOpen(false);
+      setNewUser({ username: "", password: "", role: "" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (user: any) => {
+      const response = await fetch(
+        `http://localhost:3000/api/v1/user/${user.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user),
+          credentials: "include",
+        }
+      );
+      if (!response.ok) throw new Error("Failed to update user");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setIsEditMode(false);
+      setIsEditPassword(false);
+      setCurrentUser({ username: "", password: "", role: "" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`http://localhost:3000/api/v1/user/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to delete user");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
 
   return (
     <div className="space-y-4">
       {!limit && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-9 w-[250px]"
-            />
+        <div className="flex-col lg:flex-row items-center justify-between space-y-2">
+          <Input
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-9 w-full mr-2"
+          />
+          <div className="w-full flex justify-end">
+            <Button
+              className="cursor-pointer w-full lg:w-fit "
+              size="sm"
+              onClick={() => setIsDialogOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
           </div>
-          <Button size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
         </div>
       )}
       <div className="rounded-md border">
@@ -107,8 +176,8 @@ export function UsersTable({ limit }: UsersTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+            {users.length > 0 ? (
+              users.map((user: any) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.id}</TableCell>
                   <TableCell>{user.username}</TableCell>
@@ -125,7 +194,7 @@ export function UsersTable({ limit }: UsersTableProps) {
                         variant="outline"
                         className="bg-gray-50 text-gray-700 hover:bg-gray-50 hover:text-gray-700"
                       >
-                        User
+                        Staff
                       </Badge>
                     )}
                   </TableCell>
@@ -145,10 +214,29 @@ export function UsersTable({ limit }: UsersTableProps) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>Edit User</DropdownMenuItem>
-                        <DropdownMenuItem>Change Password</DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setIsEditMode(true);
+                            setCurrentUser(user);
+                          }}
+                        >
+                          Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setIsEditPassword(true);
+                            setCurrentUser(user);
+                          }}
+                        >
+                          Change Password
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          onClick={() => deleteMutation.mutate(user.id)}
+                          className="text-red-600"
+                        >
                           Delete User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -166,6 +254,129 @@ export function UsersTable({ limit }: UsersTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Username"
+              value={newUser.username}
+              onChange={(e) =>
+                setNewUser({ ...newUser, username: e.target.value })
+              }
+            />
+            <Input
+              placeholder="Password"
+              type="password"
+              value={newUser.password}
+              onChange={(e) =>
+                setNewUser({ ...newUser, password: e.target.value })
+              }
+            />
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={newUser.role}
+              onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+            >
+              <option value="">Select Role</option>
+              <option value="1">Admin</option>
+              <option value="2">Staff</option>
+            </select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => addMutation.mutate(newUser)}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditMode} onOpenChange={setIsEditMode}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Username"
+              value={currentUser.username}
+              onChange={(e) => {
+                setCurrentUser({ ...currentUser, username: e.target.value });
+              }}
+            />
+
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={currentUser.role}
+              onChange={(e) => {
+                setCurrentUser({ ...currentUser, role: e.target.value });
+              }}
+            >
+              <option value="">Select Role</option>
+              <option value="1">Admin</option>
+              <option value="2">Staff</option>
+            </select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => {
+                setIsEditMode(false);
+                setCurrentUser({ username: "", password: "", role: "" });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={() => updateMutation.mutate(currentUser)}
+            >
+              Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditPassword} onOpenChange={setIsEditPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Password"
+              type="password"
+              value={currentUser.password}
+              onChange={(e) => {
+                setCurrentUser({ ...currentUser, password: e.target.value });
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="cursor-pointer"
+              onClick={() => {
+                setIsEditPassword(false);
+                setCurrentUser({ username: "", password: "", role: "" });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="cursor-pointer"
+              onClick={() => updateMutation.mutate(currentUser)}
+            >
+              Change Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
